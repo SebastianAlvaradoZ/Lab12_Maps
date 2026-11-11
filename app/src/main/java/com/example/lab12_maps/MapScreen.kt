@@ -3,16 +3,24 @@ package com.example.lab12_maps
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,11 +41,13 @@ import com.google.android.gms.maps.model.RoundCap
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.MapProperties
 import com.google.maps.android.compose.MapType
+import com.google.maps.android.compose.MapUiSettings
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.Polygon
 import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberMarkerState
+import kotlinx.coroutines.launch
 
 @Composable
 fun MapScreen() {
@@ -50,6 +60,42 @@ fun MapScreen() {
 
     // Tipo de mapa seleccionado (Ejercicio 1)
     var tipoDeMapa by remember { mutableStateOf(MapType.NORMAL) }
+
+    // ----- Ubicación actual del usuario (Ejercicio 2) -----
+    val scope = rememberCoroutineScope()
+    var permisoUbicacion by remember { mutableStateOf(tienePermisoUbicacion(context)) }
+    var miUbicacion by remember { mutableStateOf<LatLng?>(null) }
+
+    // Obtiene la ubicación y mueve la cámara hacia ella
+    fun centrarEnMiUbicacion() {
+        obtenerUbicacionActual(
+            context = context,
+            onUbicacion = { ubicacion ->
+                miUbicacion = ubicacion
+                scope.launch {
+                    cameraPositionState.animate(
+                        update = CameraUpdateFactory.newLatLngZoom(ubicacion, 16f),
+                        durationMs = 1500
+                    )
+                }
+            },
+            onError = { mensaje ->
+                Toast.makeText(context, mensaje, Toast.LENGTH_LONG).show()
+            }
+        )
+    }
+
+    // Solicita los permisos de ubicación en tiempo de ejecución
+    val launcherPermisos = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { resultados ->
+        permisoUbicacion = resultados.values.any { it }
+        if (permisoUbicacion) {
+            centrarEnMiUbicacion()
+        } else {
+            Toast.makeText(context, "Permiso de ubicación denegado", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     // Mover la cámara a Yura con animación al iniciar la pantalla
     LaunchedEffect(Unit) {
@@ -64,8 +110,24 @@ fun MapScreen() {
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
             cameraPositionState = cameraPositionState,
-            properties = MapProperties(mapType = tipoDeMapa)
+            properties = MapProperties(
+                mapType = tipoDeMapa,
+                isMyLocationEnabled = permisoUbicacion // Punto azul de "mi ubicación"
+            ),
+            uiSettings = MapUiSettings(myLocationButtonEnabled = false) // Usamos nuestro propio botón
         ) {
+            // Marcador en la ubicación actual del usuario (Ejercicio 2)
+            miUbicacion?.let { ubicacion ->
+                key(ubicacion) {
+                    Marker(
+                        state = rememberMarkerState(position = ubicacion),
+                        icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_GREEN),
+                        title = "Mi ubicación",
+                        snippet = "Lat: %.5f, Lng: %.5f".format(ubicacion.latitude, ubicacion.longitude)
+                    )
+                }
+            }
+
             // Icono personalizado de montaña (res/drawable/ic_montana.xml)
             val iconoMontana = remember {
                 bitmapDescriptorFromVector(context, R.drawable.ic_montana)
@@ -192,6 +254,23 @@ fun MapScreen() {
                 .statusBarsPadding()
                 .padding(top = 8.dp)
         )
+
+        // Botón para ir a la ubicación actual (Ejercicio 2)
+        ExtendedFloatingActionButton(
+            onClick = {
+                if (permisoUbicacion) {
+                    centrarEnMiUbicacion()
+                } else {
+                    launcherPermisos.launch(permisosUbicacion)
+                }
+            },
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .navigationBarsPadding()
+                .padding(16.dp)
+        ) {
+            Text("📍 Mi ubicación")
+        }
     }
 }
 
