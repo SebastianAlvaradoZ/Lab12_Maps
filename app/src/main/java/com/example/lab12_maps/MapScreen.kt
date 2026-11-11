@@ -6,12 +6,19 @@ import android.graphics.Canvas
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptor
@@ -24,6 +31,8 @@ import com.google.android.gms.maps.model.JointType
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.maps.model.RoundCap
 import com.google.maps.android.compose.GoogleMap
+import com.google.maps.android.compose.MapProperties
+import com.google.maps.android.compose.MapType
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.Polygon
 import com.google.maps.android.compose.Polyline
@@ -39,6 +48,9 @@ fun MapScreen() {
         position = CameraPosition.fromLatLngZoom(ArequipaLocation, 12f)
     }
 
+    // Tipo de mapa seleccionado (Ejercicio 1)
+    var tipoDeMapa by remember { mutableStateOf(MapType.NORMAL) }
+
     // Mover la cámara a Yura con animación al iniciar la pantalla
     LaunchedEffect(Unit) {
         cameraPositionState.animate(
@@ -51,7 +63,8 @@ fun MapScreen() {
         // Añadir GoogleMap al layout
         GoogleMap(
             modifier = Modifier.fillMaxSize(),
-            cameraPositionState = cameraPositionState
+            cameraPositionState = cameraPositionState,
+            properties = MapProperties(mapType = tipoDeMapa)
         ) {
             // Icono personalizado de montaña (res/drawable/ic_montana.xml)
             val iconoMontana = remember {
@@ -169,6 +182,16 @@ fun MapScreen() {
                 pattern = listOf(Dot(), Gap(15f))
             )
         }
+
+        // Selector de tipo de mapa sobre el mapa (Ejercicio 1)
+        MapTypeSelector(
+            tipoSeleccionado = tipoDeMapa,
+            onTipoSeleccionado = { tipoDeMapa = it },
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .statusBarsPadding()
+                .padding(top = 8.dp)
+        )
     }
 }
 
