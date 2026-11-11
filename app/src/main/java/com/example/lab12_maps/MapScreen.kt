@@ -97,6 +97,10 @@ fun MapScreen() {
         }
     }
 
+    // ----- Street View (Puntos adicionales) -----
+    // Lugar del que se muestra Street View (null = se muestra el mapa)
+    var lugarStreetView by remember { mutableStateOf<LugarTuristico?>(null) }
+
     // Mover la cámara a Yura con animación al iniciar la pantalla
     LaunchedEffect(Unit) {
         cameraPositionState.animate(
@@ -116,6 +120,24 @@ fun MapScreen() {
             ),
             uiSettings = MapUiSettings(myLocationButtonEnabled = false) // Usamos nuestro propio botón
         ) {
+            // Clustering de lugares turísticos (Puntos adicionales)
+            ClusteringLugares(
+                lugares = lugaresTuristicos,
+                onClusterClick = { cluster ->
+                    // Hace zoom sobre el grupo para separar los lugares
+                    scope.launch {
+                        cameraPositionState.animate(
+                            update = CameraUpdateFactory.newLatLngZoom(
+                                cluster.position,
+                                cameraPositionState.position.zoom + 2f
+                            ),
+                            durationMs = 800
+                        )
+                    }
+                },
+                onVerStreetView = { lugar -> lugarStreetView = lugar }
+            )
+
             // Marcador en la ubicación actual del usuario (Ejercicio 2)
             miUbicacion?.let { ubicacion ->
                 key(ubicacion) {
@@ -270,6 +292,14 @@ fun MapScreen() {
                 .padding(16.dp)
         ) {
             Text("📍 Mi ubicación")
+        }
+
+        // Street View a pantalla completa sobre el mapa (Puntos adicionales)
+        lugarStreetView?.let { lugar ->
+            StreetViewScreen(
+                lugar = lugar,
+                onCerrar = { lugarStreetView = null }
+            )
         }
     }
 }
