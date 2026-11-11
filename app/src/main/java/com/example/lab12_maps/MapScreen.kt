@@ -17,10 +17,16 @@ import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.BitmapDescriptor
 import com.google.android.gms.maps.model.BitmapDescriptorFactory
 import com.google.android.gms.maps.model.CameraPosition
+import com.google.android.gms.maps.model.Dash
+import com.google.android.gms.maps.model.Dot
+import com.google.android.gms.maps.model.Gap
+import com.google.android.gms.maps.model.JointType
 import com.google.android.gms.maps.model.LatLng
+import com.google.android.gms.maps.model.RoundCap
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.Polygon
+import com.google.maps.android.compose.Polyline
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberMarkerState
 
@@ -115,6 +121,52 @@ fun MapScreen() {
                 strokeColor = Color.Red,
                 fillColor = Color.Blue,
                 strokeWidth = 5f
+            )
+
+            // ----- Polilíneas -----
+
+            // Ejemplo 1: Ruta turística Plaza de Armas -> Parque Lambramani -> Mall Aventura
+            // Línea continua naranja con esquinas y extremos redondeados
+            val rutaTuristica = listOf(
+                LatLng(-16.399022, -71.536625), // Plaza de Armas
+                LatLng(-16.422985, -71.530970), // Parque Lambramani
+                LatLng(-16.432657, -71.509234)  // Mall Aventura
+            )
+            Polyline(
+                points = rutaTuristica,
+                color = Color(0xFFE65100),
+                width = 12f,
+                jointType = JointType.ROUND,
+                startCap = RoundCap(),
+                endCap = RoundCap()
+            )
+
+            // Ejemplo 2: Arequipa -> Yura
+            // Línea discontinua (guiones) azul y geodésica
+            val rutaYura = listOf(
+                ArequipaLocation,
+                LatLng(-16.2520984, -71.6836503) // Yura
+            )
+            Polyline(
+                points = rutaYura,
+                color = Color(0xFF1565C0),
+                width = 8f,
+                geodesic = true,
+                pattern = listOf(Dash(30f), Gap(20f))
+            )
+
+            // Ejemplo 3: Recorrido por los puntos de interés JLByR -> Paucarpata -> Zamacola
+            // Línea punteada morada
+            val recorridoPuntos = listOf(
+                LatLng(-16.433415, -71.5442652), // JLByR
+                LatLng(-16.4205151, -71.4945209), // Paucarpata
+                LatLng(-16.3524187, -71.5675994) // Zamacola
+            )
+            Polyline(
+                points = recorridoPuntos,
+                color = Color(0xFF8E24AA),
+                width = 10f,
+                pattern = listOf(Dot(), Gap(15f))
             )
         }
     }
