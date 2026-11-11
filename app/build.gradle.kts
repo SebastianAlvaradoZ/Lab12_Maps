@@ -61,6 +61,9 @@ dependencies {
     implementation("com.google.maps.android:maps-compose-utils:$mapsComposeVersion")
     // Widgets de Google Maps Compose
     implementation("com.google.maps.android:maps-compose-widgets:$mapsComposeVersion")
+
+    // Servicios de ubicación de Google (Ejercicio 2)
+    implementation("com.google.android.gms:play-services-location:21.3.0")
 }
 
 secrets {
